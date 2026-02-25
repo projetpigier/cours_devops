@@ -1,4 +1,4 @@
-# Chapitre 03 — Docker & GitHub Codespaces
+# Docker & GitHub Codespaces
 
 ## Objectif du chapitre
 
