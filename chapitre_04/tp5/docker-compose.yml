@@ -1,0 +1,45 @@
+# ============================================================
+#  docker-compose.yml — Chapitre 03, TP 5
+# ============================================================
+#
+#  Un seul service (l'application) + un volume pour la base SQLite.
+#  SQLite est integre a Python : pas de service "db" separé.
+#
+#  Commandes utiles :
+#
+#    Demarrer :
+#      docker compose up --build
+#
+#    Demarrer en arriere-plan :
+#      docker compose up -d --build
+#
+#    Arreter (donnees conservees) :
+#      docker compose down
+#
+#    Arreter + effacer les donnees :
+#      docker compose down -v
+#
+# ============================================================
+
+services:
+
+  # ── Application web + base SQLite ─────────────────────────
+  app:
+    build: .                        # Construit l'image depuis le Dockerfile local
+    ports:
+      - "8080:8080"
+    environment:
+      NOM_APP: "Application cours DevOps"
+      ENV:     "developpement"
+      PORT:    "8080"
+      DB_PATH: "/data/donnees.db"   # Chemin du fichier SQLite dans le conteneur
+    volumes:
+      - donnees_sqlite:/data         # Monte le volume dans /data/
+
+
+# ── Volume nomme ───────────────────────────────────────────
+# Le fichier SQLite donnees.db est stocke dans ce volume.
+# Il survit aux arrets/redemarrages du conteneur.
+# Attention : docker compose down -v le supprime definitivement.
+volumes:
+  donnees_sqlite:
