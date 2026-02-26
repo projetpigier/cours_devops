@@ -1,0 +1,31 @@
+{
+  "name": "Mon TP Java",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+
+  "features": {
+    // Indispensable pour voir tes fenêtres javax.swing !
+    "ghcr.io/devcontainers/features/desktop-lite:1": {
+      "password": "vscode"
+    },
+    "ghcr.io/devcontainers/features/java:1": {
+      "version": "21",
+      "installMaven": "true",
+      "installGradle": "true"
+    }
+  },
+
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "vscjava.vscode-java-pack",      // Pack complet Java
+        "vscjava.vscode-java-dependency",
+        "cweijan.vscode-mysql-client2"  // Pour explorer ta DB directement dans VS Code
+      ]
+    }
+  },
+
+  "forwardPorts": [3306, 6080],
+  "remoteUser": "vscode"
+}
