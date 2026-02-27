@@ -4,6 +4,8 @@ services:
     build:
       context: .
       dockerfile: Dockerfile
+      tty: true
+      stdin_open: true
     volumes:
       - ..:/workspaces:cached
     network_mode: service:db # Permet à Java d'accéder à MySQL via 'localhost'
