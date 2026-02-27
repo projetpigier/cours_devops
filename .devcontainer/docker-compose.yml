@@ -1,20 +1,21 @@
+version: '3.8'
 
 services:
   app:
     build:
       context: .
       dockerfile: Dockerfile
-      tty: true
-      stdin_open: true
+    tty: true
+    stdin_open: true
     volumes:
       - ..:/workspaces:cached
-    network_mode: service:db # Permet à Java d'accéder à MySQL via 'localhost'
-    
+    network_mode: service:db
+
   db:
     image: mysql:8.0
-    restart: unless-stopped
+    restart: always
     environment:
-      MYSQL_ROOT_PASSWORD: rootpassword
       MYSQL_DATABASE: mon_app_db
+      MYSQL_ROOT_PASSWORD: rootpassword
     ports:
       - "3306:3306"
