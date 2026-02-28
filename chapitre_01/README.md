@@ -44,7 +44,7 @@ Plan → Code → Build → Test → Release → Deploy → Operate → Monitor
 | Gestion de version | Git, GitHub, GitLab | Git + GitHub |
 | Conteneurisation | Docker, Podman | Docker |
 | Orchestration | Kubernetes, Docker Compose | Docker Compose |
-| CI/CD | Jenkins, GitHub Actions, GitLab CI | Jenkins |
+| CI/CD | Jenkins, GitHub Actions, GitLab CI | GitHub Actions |
 | Monitoring | Prometheus, Grafana, ELK Stack | — |
 | Infrastructure as Code | Terraform, Ansible | — |
 | Cloud | AWS, Azure, GCP | GitHub Codespaces |
@@ -54,4 +54,4 @@ Plan → Code → Build → Test → Release → Deploy → Operate → Monitor
 - DevOps est avant tout une **culture**, pas un outil
 - L'automatisation réduit les erreurs humaines et accélère les livraisons
 - CI/CD permet de livrer des fonctionnalités plus souvent et en toute confiance
-- Git, Docker et Jenkins sont les trois piliers pratiques de ce cours
+- Git, Docker et GitHub Actions sont les trois piliers pratiques de ce cours
