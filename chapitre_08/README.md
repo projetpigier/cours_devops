@@ -182,4 +182,4 @@ diviser_parZero_leveException
 - Un test = **une seule** chose à vérifier
 - Toujours suivre le pattern **Arrange / Act / Assert**
 - Les tests sont dans `src/test/java/`, dans le même package que le code testé
-- Les tests sont exécutés automatiquement par Jenkins dans le pipeline CI/CD
+- Les tests sont exécutés automatiquement par GitHub Actions dans le pipeline CI/CD

@@ -12,7 +12,7 @@ Dépôt du cours **DevOps avec Java** — IUT / Licence Pro.
 | `chapitre_04/` | Lancement d'une Application avec Docker | TD |
 | `chapitre_05/` | Programmation Impérative en Java | Cours |
 | `chapitre_06/` | Programmation Orientée Objet en Java | Cours |
-| `chapitre_07/` | Automatisation des Tâches avec Jenkins | TD |
+| `chapitre_07/` | Automatisation des Tâches avec GitHub Actions | TD |
 | `chapitre_08/` | Tests Unitaires | TD |
 | `chapitre_09/` | Utilisation des Composants Graphiques | Cours |
 | `chapitre_10/` | Intégration des Bases de Données | Cours |
@@ -37,7 +37,7 @@ Dépôt du cours **DevOps avec Java** — IUT / Licence Pro.
 | JDBC + MySQL | Accès à la base de données |
 | Docker + Docker Compose | Conteneurisation et orchestration |
 | Git + GitHub | Gestion de version et collaboration |
-| Jenkins | Pipeline CI/CD |
+| GitHub Actions | Pipeline CI/CD |
 | JUnit 5 | Tests unitaires |
 | GitHub Codespaces | Environnement de développement cloud |
 

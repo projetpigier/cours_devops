@@ -263,7 +263,7 @@ docker compose exec -T db mysql \
 | Base de données | MySQL 8.0 | 10, 12 |
 | Conteneurisation | Docker + Docker Compose | 4, 11 |
 | Gestion du code | Git + GitHub | 3 |
-| Pipeline CI/CD | Jenkins | 7 |
+| Pipeline CI/CD | GitHub Actions | 7 |
 | Tests | JUnit 5 | 8 |
 
 ## Points clés à retenir

@@ -1,208 +1,241 @@
-# Chapitre 7 — TD : Automatisation des Tâches avec Jenkins
+# Chapitre 7 — TD : Automatisation des Tâches avec GitHub Actions
 
 ## Objectifs du chapitre
 
-Mettre en place un pipeline **CI/CD** avec **Jenkins** : configurer des projets,
-écrire des `Jenkinsfile`, et gérer les notifications et rapports de build.
+Mettre en place un pipeline **CI/CD** avec **GitHub Actions** : configurer des workflows,
+écrire des fichiers YAML de pipeline, et gérer les notifications et rapports de build.
 
 > Ce chapitre est entièrement pratique (TD).
-> Jenkins est lancé dans un conteneur Docker.
+> Les pipelines s'exécutent directement sur GitHub, sans serveur à gérer.
 
 ## Contenu du TD
 
-### 7.1 Configuration de projets Jenkins
+### 7.1 Concepts et configuration de GitHub Actions
 
-**Lancer Jenkins avec Docker :**
+GitHub Actions permet d'automatiser des tâches directement dans votre dépôt GitHub,
+à chaque push, pull request ou selon un calendrier.
 
-```bash
-# Lancer Jenkins en conteneur
-docker run -d \
-  -p 8080:8080 \
-  -p 50000:50000 \
-  -v jenkins_home:/var/jenkins_home \
-  --name jenkins \
-  jenkins/jenkins:lts
+**Vocabulaire clé :**
 
-# Récupérer le mot de passe d'initialisation
-docker exec jenkins cat /var/jenkins_home/secrets/initialAdminPassword
+| Terme | Description |
+|---|---|
+| **Workflow** | Fichier YAML décrivant un pipeline automatisé |
+| **Event** | Déclencheur du workflow (`push`, `pull_request`, `schedule`…) |
+| **Job** | Ensemble de steps exécutés sur un même runner |
+| **Step** | Une action réutilisable ou une commande shell |
+| **Runner** | Machine virtuelle qui exécute les jobs (ex : `ubuntu-latest`) |
+| **Action** | Composant réutilisable publié sur GitHub Marketplace |
+
+**Emplacement des workflows :**
+
+Les fichiers de workflow sont placés dans `.github/workflows/` à la racine du dépôt.
+
+```
+cours_devops/
+└── .github/
+    └── workflows/
+        ├── ci.yml        ← pipeline d'intégration continue
+        └── release.yml   ← pipeline de livraison
 ```
 
-Accédez ensuite à Jenkins via `http://localhost:8080`.
+**Déclencheurs courants :**
 
-**Étapes de configuration initiale :**
-
-1. Entrer le mot de passe d'initialisation
-2. Installer les plugins suggérés
-3. Créer le compte administrateur
-4. Configurer l'URL de Jenkins
-
-**Plugins essentiels à installer :**
-
-| Plugin | Rôle |
-|---|---|
-| Git | Intégration avec les dépôts Git |
-| Maven Integration | Support des projets Maven |
-| GitHub | Connexion avec GitHub |
-| Pipeline | Support des Jenkinsfile |
-| JUnit | Publication des rapports de tests |
-| Email Extension | Notifications par email |
-
-**Créer un projet Pipeline :**
-
-1. `Nouveau Item` → nom du projet → `Pipeline`
-2. Dans la section **Pipeline**, choisir `Pipeline script from SCM`
-3. SCM : `Git`, URL du dépôt GitHub
-4. Chemin du Jenkinsfile : `Jenkinsfile` (racine du projet)
-5. Sauvegarder
-
-### 7.2 Création de pipelines de CI/CD avec Jenkinsfile
-
-Un **Jenkinsfile** décrit toutes les étapes du pipeline sous forme de code.
-
-**Jenkinsfile de base pour un projet Java Maven :**
-
-```groovy
-pipeline {
-    agent any
-
-    tools {
-        maven 'Maven 3.9'
-        jdk   'Java 21'
-    }
-
-    stages {
-
-        stage('Récupération du code') {
-            steps {
-                git branch: 'main',
-                    url: 'https://github.com/VOTRE_USERNAME/cours_devops.git'
-            }
-        }
-
-        stage('Compilation') {
-            steps {
-                sh 'mvn clean compile'
-            }
-        }
-
-        stage('Tests unitaires') {
-            steps {
-                sh 'mvn test'
-            }
-            post {
-                always {
-                    // Publier les résultats JUnit
-                    junit 'target/surefire-reports/*.xml'
-                }
-            }
-        }
-
-        stage('Packaging') {
-            steps {
-                sh 'mvn package -DskipTests'
-                archiveArtifacts artifacts: 'target/*.jar', fingerprint: true
-            }
-        }
-
-        stage('Construction de l\'image Docker') {
-            steps {
-                sh 'docker build -t app-cours:${BUILD_NUMBER} .'
-            }
-        }
-
-    }
-
-    post {
-        success {
-            echo 'Build réussi !'
-        }
-        failure {
-            echo 'Build échoué — vérifiez les logs ci-dessus'
-        }
-    }
-}
+```yaml
+on:
+  push:
+    branches: [main]          # à chaque push sur main
+  pull_request:
+    branches: [main]          # à chaque pull request vers main
+  schedule:
+    - cron: '0 2 * * *'       # tous les jours à 2h du matin
+  workflow_dispatch:           # déclenchement manuel depuis GitHub
 ```
 
-**Variables d'environnement Jenkins utiles :**
+### 7.2 Création de pipelines CI/CD
 
-| Variable | Description |
-|---|---|
-| `BUILD_NUMBER` | Numéro du build courant |
-| `BUILD_URL` | URL de la page du build |
-| `GIT_BRANCH` | Branche Git en cours de build |
-| `GIT_COMMIT` | Hash du commit courant |
-| `WORKSPACE` | Chemin du dossier de travail |
+**Workflow de base pour un projet Java Maven :**
 
-**Déclencheurs automatiques :**
+```yaml
+# .github/workflows/ci.yml
+name: CI Java Maven
 
-```groovy
-triggers {
-    // Déclencher à chaque push GitHub (nécessite un webhook)
-    githubPush()
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
 
-    // Vérifier toutes les 5 minutes si le code a changé
-    pollSCM('H/5 * * * *')
+jobs:
+  build:
+    runs-on: ubuntu-latest
 
-    // Build planifié (tous les jours à 2h du matin)
-    cron('0 2 * * *')
-}
+    steps:
+      - name: Récupération du code
+        uses: actions/checkout@v4
+
+      - name: Configuration de Java 21
+        uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Compilation
+        run: mvn clean compile
+
+      - name: Tests unitaires
+        run: mvn test
+
+      - name: Packaging
+        run: mvn package -DskipTests
+
+      - name: Archiver le JAR
+        uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: target/*.jar
+```
+
+**Variables d'environnement et secrets GitHub Actions :**
+
+| Source | Syntaxe | Usage |
+|---|---|---|
+| Variable d'environnement | `${{ env.MA_VAR }}` | Valeurs non sensibles |
+| Secret GitHub | `${{ secrets.MON_SECRET }}` | Mots de passe, tokens |
+| Hash du commit | `${{ github.sha }}` | Identifiant unique du commit |
+| Nom de la branche | `${{ github.ref_name }}` | Branche en cours de build |
+| Numéro du build | `${{ github.run_number }}` | Numéro d'exécution |
+
+**Configurer un secret dans GitHub :**
+
+1. `Settings` → `Secrets and variables` → `Actions`
+2. `New repository secret`
+3. Renseigner le nom et la valeur
+4. Utiliser dans le workflow avec `${{ secrets.NOM_DU_SECRET }}`
+
+**Workflow avec construction d'image Docker :**
+
+```yaml
+# .github/workflows/ci.yml
+name: CI + Docker
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+          cache: maven
+
+      - name: Build Maven
+        run: mvn package -DskipTests
+
+      - name: Connexion à Docker Hub
+        uses: docker/login-action@v3
+        with:
+          username: ${{ secrets.DOCKERHUB_USERNAME }}
+          password: ${{ secrets.DOCKERHUB_TOKEN }}
+
+      - name: Construction et push de l'image
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          push: true
+          tags: ${{ secrets.DOCKERHUB_USERNAME }}/app-cours:${{ github.run_number }}
+```
+
+**Jobs avec dépendances (`needs`) :**
+
+```yaml
+jobs:
+  test:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - run: mvn test
+
+  package:
+    runs-on: ubuntu-latest
+    needs: test      # s'exécute seulement si test réussit
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with:
+          java-version: '21'
+          distribution: 'temurin'
+      - run: mvn package -DskipTests
+      - uses: actions/upload-artifact@v4
+        with:
+          name: app-jar
+          path: target/*.jar
 ```
 
 ### 7.3 Gestion des notifications et des rapports
 
-**Notifications par email :**
-
-```groovy
-post {
-    failure {
-        mail to: 'equipe@exemple.com',
-             subject: "Build échoué : ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-             body: """
-                 Le build a échoué.
-                 
-                 Projet  : ${env.JOB_NAME}
-                 Build   : ${env.BUILD_NUMBER}
-                 URL     : ${env.BUILD_URL}
-                 Branche : ${env.GIT_BRANCH}
-                 
-                 Consultez les logs pour plus de détails.
-             """
-    }
-    success {
-        mail to: 'equipe@exemple.com',
-             subject: "Build réussi : ${env.JOB_NAME} #${env.BUILD_NUMBER}",
-             body: "Le build #${env.BUILD_NUMBER} s'est terminé avec succès."
-    }
-}
-```
-
 **Publication des rapports de tests JUnit :**
 
-```groovy
-post {
-    always {
-        // Rapport JUnit (tests unitaires Maven)
-        junit 'target/surefire-reports/*.xml'
+```yaml
+      - name: Tests unitaires
+        run: mvn test
 
-        // Archiver les artefacts de build
-        archiveArtifacts artifacts: 'target/*.jar',
-                         allowEmptyArchive: true
-    }
-}
+      - name: Publier les résultats des tests
+        uses: dorny/test-reporter@v1
+        if: always()   # exécuté même en cas d'échec
+        with:
+          name: Résultats JUnit
+          path: target/surefire-reports/*.xml
+          reporter: java-junit
 ```
 
-**Webhook GitHub → Jenkins :**
+**Résumé de build dans l'interface GitHub :**
 
-1. Dans GitHub : `Settings` → `Webhooks` → `Add webhook`
-2. Payload URL : `http://ADRESSE_JENKINS:8080/github-webhook/`
-3. Content type : `application/json`
-4. Événements : `Just the push event`
-5. Dans Jenkins : activer `GitHub hook trigger for GITScm polling` dans le projet
+```yaml
+      - name: Résumé du build
+        if: always()
+        run: |
+          echo "## Résultats du build" >> $GITHUB_STEP_SUMMARY
+          echo "- Branche : \`${{ github.ref_name }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Commit  : \`${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- Numéro  : #${{ github.run_number }}" >> $GITHUB_STEP_SUMMARY
+```
+
+**Notification par email en cas d'échec :**
+
+```yaml
+      - name: Notification email en cas d'échec
+        if: failure()
+        uses: dawidd6/action-send-mail@v3
+        with:
+          server_address: smtp.gmail.com
+          server_port: 587
+          username: ${{ secrets.EMAIL_USER }}
+          password: ${{ secrets.EMAIL_PASS }}
+          to: equipe@exemple.com
+          from: ci@exemple.com
+          subject: "Build échoué : ${{ github.repository }} #${{ github.run_number }}"
+          body: |
+            Le pipeline a échoué sur la branche ${{ github.ref_name }}.
+            Commit : ${{ github.sha }}
+            Lien   : ${{ github.server_url }}/${{ github.repository }}/actions/runs/${{ github.run_id }}
+```
 
 ## Points clés à retenir
 
-- Le **Jenkinsfile** doit être versionné dans le dépôt Git (Infrastructure as Code)
-- Chaque `stage` représente une étape distincte du pipeline
-- Le bloc `post` gère les actions en fin de pipeline (succès, échec, toujours)
-- Les webhooks permettent de déclencher les builds automatiquement à chaque push
-- Les rapports de tests sont archivés et consultables depuis l'interface Jenkins
+- Les workflows sont des fichiers YAML versionnés dans `.github/workflows/` (Infrastructure as Code)
+- Chaque `job` est une unité d'exécution indépendante ; chaque `step` est une commande ou une action
+- Les secrets sont stockés de façon sécurisée dans GitHub et injectés à l'exécution
+- La condition `if: always()` exécute un step même si le pipeline a échoué
+- Les rapports de tests et résumés sont accessibles directement dans l'onglet **Actions** de GitHub
